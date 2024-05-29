@@ -29,4 +29,4 @@ As melhores recompensas são concedidas aos usuários mais ativos, incentivando 
 
 # Objetivo:
 
-O aplicativo busca não apenas informar, mas também transformar a consciência ambiental em ação prática. Com funcionalidades que engajam os usuários de maneira ativa, o projeto almeja criar uma comunidade vibrante e consciente que contribua regularmente para a saúde dos ecossistemas marinhos.
+* O aplicativo busca não apenas informar, mas também transformar a consciência ambiental em ação prática. Com funcionalidades que engajam os usuários de maneira ativa, o projeto almeja criar uma comunidade vibrante e consciente que contribua regularmente para a saúde dos ecossistemas marinhos.
