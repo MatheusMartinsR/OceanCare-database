@@ -4,14 +4,6 @@ O aplicativo OceanCare visa promover a conscientização e ação direta sobre a
 
 ## Principais Funcionalidades:
 
-# Seção Educativa:
-
-* Oferece conteúdos educativos abrangentes sobre conservação marinha, incluindo artigos, vídeos e infográficos.
-* Informações atualizadas sobre os impactos da poluição marinha e as melhores práticas para mitigar esses efeitos.
-* Divulgação e Inscrição em Projetos de Conservação:
-* Permite aos usuários descobrir e se inscrever em eventos e projetos locais, como limpezas de praia e campanhas de reciclagem.
-* Funcionalidade para organizações e voluntários postarem novos eventos, facilitando a participação comunitária.
-
 # Recompensas e Missões:
 
 * Os usuários recebem pontos por reportarem avistamentos de poluição, participarem de eventos de limpeza e realizarem ações específicas, como descartar corretamente resíduos encontrados nas praias.
