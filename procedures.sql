@@ -1,269 +1,686 @@
-CREATE OR REPLACE PROCEDURE inserir_usuario(
-    p_id_usuario    IN tb_usuario.id_usuario%TYPE,
-    p_id_recompensa IN tb_usuario.id_recompensa%TYPE,
-    p_id_missao     IN tb_usuario.id_missao%TYPE,
-    p_email_usuario IN tb_usuario.email_usuario%TYPE,
-    p_senha_usuario IN tb_usuario.senha_usuario%TYPE,
-    p_cnpj_usuario  IN tb_usuario.cnpj_usuario%TYPE DEFAULT NULL,
-    p_cpf_usuario   IN tb_usuario.cpf_usuario%TYPE
-)
-IS
-    v_count NUMBER;
-BEGIN
-    -- Verificar se o usuário já existe
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_usuario
-    WHERE  id_usuario = p_id_usuario;
+-- PROCEDURES DE INSERÇÃO
 
-    IF v_count > 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Usuário já existe na tabela.');
+CREATE OR REPLACE PROCEDURE MANAGE_TB_TIPO_INTERACAO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_TP_INTERACAO IN TB_TIPO_INTERACAO.ID_TP_INTERACAO%TYPE,
+    p_ID_RECOMPENSA IN TB_TIPO_INTERACAO.ID_RECOMPENSA%TYPE DEFAULT NULL,
+    p_DESCRICAO_TIPO IN TB_TIPO_INTERACAO.DESCRICAO_TIPO%TYPE DEFAULT NULL,
+    p_PONTOS IN TB_TIPO_INTERACAO.PONTOS%TYPE DEFAULT NULL
+) IS
+    v_count INTEGER;
+BEGIN
+    IF p_OPERATION = 'INSERT' THEN
+
+        IF p_DESCRICAO_TIPO IS NULL OR p_PONTOS IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Os campos DESCRICAO_TIPO e PONTOS são obrigatórios.');
+        END IF;
+
+
+        SELECT COUNT(*) INTO v_count FROM TB_RECOMPENSA WHERE ID_RECOMPENSA = p_ID_RECOMPENSA;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'ID_RECOMPENSA não existe.');
+        END IF;
+
+
+        INSERT INTO TB_TIPO_INTERACAO (
+            ID_TP_INTERACAO, ID_RECOMPENSA, DESCRICAO_TIPO, PONTOS
+        ) VALUES (
+            p_ID_TP_INTERACAO, p_ID_RECOMPENSA, p_DESCRICAO_TIPO, p_PONTOS
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_TIPO_INTERACAO
+        SET ID_RECOMPENSA = p_ID_RECOMPENSA,
+            DESCRICAO_TIPO = p_DESCRICAO_TIPO,
+            PONTOS = p_PONTOS
+        WHERE ID_TP_INTERACAO = p_ID_TP_INTERACAO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_TP_INTERACAO não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_TIPO_INTERACAO
+        WHERE ID_TP_INTERACAO = p_ID_TP_INTERACAO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_TP_INTERACAO não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20006, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_usuario (id_usuario, id_recompensa, id_missao, email_usuario, senha_usuario, cnpj_usuario, cpf_usuario)
-    VALUES (p_id_usuario, p_id_recompensa, p_id_missao, p_email_usuario, p_senha_usuario, p_cnpj_usuario, p_cpf_usuario);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir usuário.');
+        RAISE_APPLICATION_ERROR(-20003, 'ID_TP_INTERACAO já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir usuário: ' || SQLERRM);
-END inserir_usuario;
+        RAISE_APPLICATION_ERROR(-20004, SQLERRM);
+END;
 
-
-CREATE OR REPLACE PROCEDURE inserir_recompensa(
-    p_id_recompensa        IN tb_recompensas.id_recompensa%TYPE,
-    p_nome_recompensa      IN tb_recompensas.nome_recompensa%TYPE,
-    p_descricao_recompensa IN tb_recompensas.descricao_recompensa%TYPE,
-    p_tipo_recompensa      IN tb_recompensas.tipo_recompensa%TYPE,
-    p_status_recompensa    IN tb_recompensas.status_recompensa%TYPE
-)
-IS
+CREATE OR REPLACE PROCEDURE MANAGE_TB_USUARIO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_USUARIO IN TB_USUARIO.ID_USUARIO%TYPE,
+    p_ID_PERFIL IN TB_USUARIO.ID_PERFIL%TYPE DEFAULT NULL,
+    p_ID_REGIAO IN TB_USUARIO.ID_REGIAO%TYPE DEFAULT NULL,
+    p_EMAIL_USUARIO IN TB_USUARIO.EMAIL_USUARIO%TYPE DEFAULT NULL,
+    p_SENHA_EMAIL IN TB_USUARIO.SENHA_EMAIL%TYPE DEFAULT NULL,
+    p_CNPJ_USUARIO IN TB_USUARIO.CNPJ_USUARIO%TYPE DEFAULT NULL,
+    p_CPF_USUARIO IN TB_USUARIO.CPF_USUARIO%TYPE DEFAULT NULL
+) IS
+    v_count INTEGER;
 BEGIN
-    INSERT INTO tb_recompensas (id_recompensa, nome_recompensa, descricao_recompensa, tipo_recompensa, status_recompensa)
-    VALUES (p_id_recompensa, p_nome_recompensa, p_descricao_recompensa, p_tipo_recompensa, p_status_recompensa);
+    IF p_OPERATION = 'INSERT' THEN
 
-    COMMIT;
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Chave primária duplicada ao inserir recompensa.');
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Erro ao inserir recompensa: ' || SQLERRM);
-END inserir_recompensa;
+        IF p_EMAIL_USUARIO IS NULL OR p_SENHA_EMAIL IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Os campos EMAIL_USUARIO e SENHA_EMAIL são obrigatórios.');
+        END IF;
 
 
-CREATE OR REPLACE PROCEDURE inserir_evento(
-    p_id_evento        IN tb_evento.id_evento%TYPE,
-    p_id_usuario       IN tb_evento.id_usuario%TYPE,
-    p_nome_evento      IN tb_evento.nome_evento%TYPE,
-    p_descricao_evento IN tb_evento.descricao_evento%TYPE,
-    p_data_evento      IN tb_evento.data_evento%TYPE,
-    p_local_evento     IN tb_evento.local_evento%TYPE
-)
-IS
-    v_count NUMBER;
-BEGIN
-    -- Verificar se o usuário existe antes de inserir o evento
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_usuario
-    WHERE  id_usuario = p_id_usuario;
+        SELECT COUNT(*) INTO v_count FROM TB_PERFIL WHERE ID_PERFIL = p_ID_PERFIL;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'ID_PERFIL não existe.');
+        END IF;
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Usuário não encontrado para associar ao evento.');
+
+        SELECT COUNT(*) INTO v_count FROM TB_REGIAO WHERE ID_REGIAO = p_ID_REGIAO;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_REGIAO não existe.');
+        END IF;
+
+
+        INSERT INTO TB_USUARIO (
+            ID_USUARIO, ID_PERFIL, ID_REGIAO, EMAIL_USUARIO, SENHA_EMAIL, CNPJ_USUARIO, CPF_USUARIO
+        ) VALUES (
+            p_ID_USUARIO, p_ID_PERFIL, p_ID_REGIAO, p_EMAIL_USUARIO, p_SENHA_EMAIL, p_CNPJ_USUARIO, p_CPF_USUARIO
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_USUARIO
+        SET ID_PERFIL = p_ID_PERFIL,
+            ID_REGIAO = p_ID_REGIAO,
+            EMAIL_USUARIO = p_EMAIL_USUARIO,
+            SENHA_EMAIL = p_SENHA_EMAIL,
+            CNPJ_USUARIO = p_CNPJ_USUARIO,
+            CPF_USUARIO = p_CPF_USUARIO
+        WHERE ID_USUARIO = p_ID_USUARIO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_USUARIO não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_USUARIO
+        WHERE ID_USUARIO = p_ID_USUARIO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_USUARIO não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20006, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_evento (id_evento, id_usuario, nome_evento, descricao_evento, data_evento, local_evento)
-    VALUES (p_id_evento, p_id_usuario, p_nome_evento, p_descricao_evento, p_data_evento, p_local_evento);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir evento.');
+        RAISE_APPLICATION_ERROR(-20003, 'ID_USUARIO já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir evento: ' || SQLERRM);
-END inserir_evento;
+        RAISE_APPLICATION_ERROR(-20004, SQLERRM);
+END;
 
-
-CREATE OR REPLACE PROCEDURE inserir_estatistica(
-    p_id_estatistica        IN tb_estatistica.id_estatistica%TYPE,
-    p_id_evento             IN tb_estatistica.id_evento%TYPE,
-    p_descricao_estatistica IN tb_estatistica.descricao_estatistica%TYPE,
-    p_data_coleta_estat     IN tb_estatistica.data_coleta_estat%TYPE,
-    p_fonte_estatistica     IN tb_estatistica.fonte_estatistica%TYPE
-)
-IS
-    v_count NUMBER;
+CREATE OR REPLACE PROCEDURE MANAGE_TB_INTERACOES (
+    p_OPERATION IN VARCHAR2,
+    p_ID_INTERACOES IN TB_INTERACOES.ID_INTERACOES%TYPE,
+    p_ID_USUARIO IN TB_INTERACOES.ID_USUARIO%TYPE DEFAULT NULL,
+    p_ID_EVENTO IN TB_INTERACOES.ID_EVENTO%TYPE DEFAULT NULL,
+    p_ID_TP_INTERACAO IN TB_INTERACOES.ID_TP_INTERACAO%TYPE DEFAULT NULL,
+    p_ID_INCIDENTES IN TB_INTERACOES.ID_INCIDENTES%TYPE DEFAULT NULL,
+    p_INTERACOES IN TB_INTERACOES.INTERACOES%TYPE DEFAULT NULL
+) IS
+    v_count INTEGER;
 BEGIN
-    -- Verificar se o evento existe antes de inserir a estatística
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_evento
-    WHERE  id_evento = p_id_evento;
+    IF p_OPERATION = 'INSERT' THEN
+        
+        IF p_INTERACOES IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo INTERACOES é obrigatório.');
+        END IF;
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Evento não encontrado para associar à estatística.');
+        
+        SELECT COUNT(*) INTO v_count FROM TB_USUARIO WHERE ID_USUARIO = p_ID_USUARIO;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'ID_USUARIO não existe.');
+        END IF;
+
+        
+        SELECT COUNT(*) INTO v_count FROM TB_EVENTO WHERE ID_EVENTO = p_ID_EVENTO;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_EVENTO não existe.');
+        END IF;
+
+    
+        SELECT COUNT(*) INTO v_count FROM TB_TIPO_INTERACAO WHERE ID_TP_INTERACAO = p_ID_TP_INTERACAO;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20004, 'ID_TP_INTERACAO não existe.');
+        END IF;
+
+ 
+        SELECT COUNT(*) INTO v_count FROM TB_INCIDENTES_POLUICAO WHERE ID_INCIDENTES = p_ID_INCIDENTES;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_INCIDENTES não existe.');
+        END IF;
+
+
+        INSERT INTO TB_INTERACOES (
+            ID_INTERACOES, ID_USUARIO, ID_EVENTO, ID_TP_INTERACAO, ID_INCIDENTES, INTERACOES
+        ) VALUES (
+            p_ID_INTERACOES, p_ID_USUARIO, p_ID_EVENTO, p_ID_TP_INTERACAO, p_ID_INCIDENTES, p_INTERACOES
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_INTERACOES
+        SET ID_USUARIO = p_ID_USUARIO,
+            ID_EVENTO = p_ID_EVENTO,
+            ID_TP_INTERACAO = p_ID_TP_INTERACAO,
+            ID_INCIDENTES = p_ID_INCIDENTES,
+            INTERACOES = p_INTERACOES
+        WHERE ID_INTERACOES = p_ID_INTERACOES;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20006, 'ID_INTERACOES não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_INTERACOES
+        WHERE ID_INTERACOES = p_ID_INTERACOES;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20006, 'ID_INTERACOES não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20007, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_estatistica (id_estatistica, id_evento, descricao_estatistica, data_coleta_estat, fonte_estatistica)
-    VALUES (p_id_estatistica, p_id_evento, p_descricao_estatistica, p_data_coleta_estat, p_fonte_estatistica);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir estatística.');
+        RAISE_APPLICATION_ERROR(-20003, 'ID_INTERACOES já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir estatística: ' || SQLERRM);
-END inserir_estatistica;
+        RAISE_APPLICATION_ERROR(-20004, SQLERRM);
+END;
 
-
-CREATE OR REPLACE PROCEDURE inserir_conteudo_edu(
-    p_id_conteudo     IN tb_conteudo_edu.id_conteudo%TYPE,
-    p_id_usuario      IN tb_conteudo_edu.id_usuario%TYPE,
-    p_titulo_conteudo IN tb_conteudo_edu.titulo_conteudo%TYPE,
-    p_descricao_conteudo IN tb_conteudo_edu.descricao_conteudo%TYPE,
-    p_url_conteudo    IN tb_conteudo_edu.url_conteudo%TYPE DEFAULT NULL
-)
-IS
-    v_count NUMBER;
+CREATE OR REPLACE PROCEDURE MANAGE_TB_INCIDENTES_POLUICAO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_INCIDENTES IN TB_INCIDENTES_POLUICAO.ID_INCIDENTES%TYPE,
+    p_ID_TP_INCIDENTE IN TB_INCIDENTES_POLUICAO.ID_TP_INCIDENTE%TYPE DEFAULT NULL,
+    p_INCIDENTES IN TB_INCIDENTES_POLUICAO.INCIDENTES%TYPE DEFAULT NULL
+) IS
+    v_count INTEGER;
 BEGIN
-    -- Verificar se o usuário existe antes de inserir o conteúdo educativo
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_usuario
-    WHERE  id_usuario = p_id_usuario;
+    IF p_OPERATION = 'INSERT' THEN
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Usuário não encontrado para associar ao conteúdo educativo.');
+        IF p_INCIDENTES IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo INCIDENTES é obrigatório.');
+        END IF;
+
+
+        SELECT COUNT(*) INTO v_count FROM TB_TIPOS_INCIDENTE WHERE ID_TP_INCIDENTE = p_ID_TP_INCIDENTE;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'ID_TP_INCIDENTE não existe.');
+        END IF;
+
+
+        INSERT INTO TB_INCIDENTES_POLUICAO (
+            ID_INCIDENTES, ID_TP_INCIDENTE, INCIDENTES
+        ) VALUES (
+            p_ID_INCIDENTES, p_ID_TP_INCIDENTE, p_INCIDENTES
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_INCIDENTES_POLUICAO
+        SET ID_TP_INCIDENTE = p_ID_TP_INCIDENTE,
+            INCIDENTES = p_INCIDENTES
+        WHERE ID_INCIDENTES = p_ID_INCIDENTES;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_INCIDENTES não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_INCIDENTES_POLUICAO
+        WHERE ID_INCIDENTES = p_ID_INCIDENTES;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20005, 'ID_INCIDENTES não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20006, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_conteudo_edu (id_conteudo, id_usuario, titulo_conteudo, descricao_conteudo, url_conteudo)
-    VALUES (p_id_conteudo, p_id_usuario, p_titulo_conteudo, p_descricao_conteudo, p_url_conteudo);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir conteúdo educativo.');
+        RAISE_APPLICATION_ERROR(-20003, 'ID_INCIDENTES já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir conteúdo educativo: ' || SQLERRM);
-END inserir_conteudo_edu;
+        RAISE_APPLICATION_ERROR(-20004, SQLERRM);
+END;
 
-
-
-CREATE OR REPLACE PROCEDURE inserir_ranking(
-    p_id_ranking        IN tb_ranking.id_ranking%TYPE,
-    p_id_usuario        IN tb_ranking.id_usuario%TYPE,
-    p_posicao_ranking   IN tb_ranking.posicao_ranking%TYPE,
-    p_pontuacao_ranking IN tb_ranking.pontuacao_ranking%TYPE,
-    p_dt_atualizacao    IN tb_ranking.dt_atualizacao%TYPE
-)
-IS
-    v_count NUMBER;
+CREATE OR REPLACE PROCEDURE MANAGE_TB_TIPOS_INCIDENTE (
+    p_OPERATION IN VARCHAR2,
+    p_ID_TP_INCIDENTE IN TB_TIPOS_INCIDENTE.ID_TP_INCIDENTE%TYPE,
+    p_TIPO_INCIDENTE IN TB_TIPOS_INCIDENTE.TIPO_INCIDENTE%TYPE DEFAULT NULL
+) IS
 BEGIN
-    -- Verificar se o usuário existe antes de inserir no ranking
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_usuario
-    WHERE  id_usuario = p_id_usuario;
+    IF p_OPERATION = 'INSERT' THEN
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Usuário não encontrado para associar ao ranking.');
+        IF p_TIPO_INCIDENTE IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo TIPO_INCIDENTE é obrigatório.');
+        END IF;
+
+ 
+        INSERT INTO TB_TIPOS_INCIDENTE (
+            ID_TP_INCIDENTE, TIPO_INCIDENTE
+        ) VALUES (
+            p_ID_TP_INCIDENTE, p_TIPO_INCIDENTE
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+ 
+        UPDATE TB_TIPOS_INCIDENTE
+        SET TIPO_INCIDENTE = p_TIPO_INCIDENTE
+        WHERE ID_TP_INCIDENTE = p_ID_TP_INCIDENTE;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_TP_INCIDENTE não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_TIPOS_INCIDENTE
+        WHERE ID_TP_INCIDENTE = p_ID_TP_INCIDENTE;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_TP_INCIDENTE não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_ranking (id_ranking, id_usuario, posicao_ranking, pontuacao_ranking, dt_atualizacao)
-    VALUES (p_id_ranking, p_id_usuario, p_posicao_ranking, p_pontuacao_ranking, p_dt_atualizacao);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir ranking.');
+        RAISE_APPLICATION_ERROR(-20002, 'ID_TP_INCIDENTE já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir ranking: ' || SQLERRM);
-END inserir_ranking;
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
 
-
-
-CREATE OR REPLACE PROCEDURE inserir_participacao_evento(
-    p_id_participacao          IN tb_participacao_evento.id_participacao%TYPE,
-    p_id_evento                IN tb_participacao_evento.id_evento%TYPE,
-    p_data_participacao        IN tb_participacao_evento.data_participacao%TYPE,
-    p_comentarios_participacao IN tb_participacao_evento.comentarios_participacao%TYPE,
-    p_pontos_participacao      IN tb_participacao_evento.pontos_participacao%TYPE
-)
-IS
-    v_count NUMBER;
+CREATE OR REPLACE PROCEDURE MANAGE_TB_RECOMPENSA (
+    p_OPERATION IN VARCHAR2,
+    p_ID_RECOMPENSA IN TB_RECOMPENSA.ID_RECOMPENSA%TYPE,
+    p_ID_TP_RECOMPENSA IN TB_RECOMPENSA.ID_TP_RECOMPENSA%TYPE DEFAULT NULL,
+    p_DESCRICAO_RECOMPENSA IN TB_RECOMPENSA.DESCRICAO_RECOMPENSA%TYPE DEFAULT NULL,
+    p_QTD_PONTOS IN TB_RECOMPENSA.QTD_PONTOS%TYPE DEFAULT NULL
+) IS
+    v_count INTEGER;
 BEGIN
-    -- Verificar se o evento existe antes de inserir a participação
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_evento
-    WHERE  id_evento = p_id_evento;
+    IF p_OPERATION = 'INSERT' THEN
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Evento não encontrado para associar à participação.');
+        IF p_DESCRICAO_RECOMPENSA IS NULL OR p_QTD_PONTOS IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Os campos DESCRICAO_RECOMPENSA e QTD_PONTOS são obrigatórios.');
+        END IF;
+
+
+        SELECT COUNT(*) INTO v_count FROM TB_TIPO_RECOMPENSA WHERE ID_TP_RECOMPENSA = p_ID_TP_RECOMPENSA;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'ID_TP_RECOMPENSA não existe.');
+        END IF;
+
+
+        INSERT INTO TB_RECOMPENSA (
+            ID_RECOMPENSA, ID_TP_RECOMPENSA, DESCRICAO_RECOMPENSA, QTD_PONTOS
+        ) VALUES (
+            p_ID_RECOMPENSA, p_ID_TP_RECOMPENSA, p_DESCRICAO_RECOMPENSA, p_QTD_PONTOS
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+ 
+        UPDATE TB_RECOMPENSA
+        SET ID_TP_RECOMPENSA = p_ID_TP_RECOMPENSA,
+            DESCRICAO_RECOMPENSA = p_DESCRICAO_RECOMPENSA,
+            QTD_PONTOS = p_QTD_PONTOS
+        WHERE ID_RECOMPENSA = p_ID_RECOMPENSA;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_RECOMPENSA não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_RECOMPENSA
+        WHERE ID_RECOMPENSA = p_ID_RECOMPENSA;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_RECOMPENSA não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_participacao_evento (id_participacao, id_evento, data_participacao, comentarios_participacao, pontos_participacao)
-    VALUES (p_id_participacao, p_id_evento, p_data_participacao, p_comentarios_participacao, p_pontos_participacao);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir participação em evento.');
+        RAISE_APPLICATION_ERROR(-20002, 'ID_RECOMPENSA já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir participação em evento: ' || SQLERRM);
-END inserir_participacao_evento;
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
 
 
-CREATE OR REPLACE PROCEDURE inserir_relatorio_poluicao(
-    p_id_relatorio          IN tb_relatorios_poluicao.id_relatorio%TYPE,
-    p_id_usuario            IN tb_relatorios_poluicao.id_usuario%TYPE,
-    p_data_relatorio        IN tb_relatorios_poluicao.data_relatorio%TYPE,
-    p_localizacao_relatorio IN tb_relatorios_poluicao.localizacao_relatorio%TYPE,
-    p_tipo_poluente         IN tb_relatorios_poluicao.tipo_poluente%TYPE,
-    p_descricao_incidente   IN tb_relatorios_poluicao.descricao_incidente%TYPE
-)
-IS
-    v_count NUMBER;
+CREATE OR REPLACE PROCEDURE MANAGE_TB_TIPO_RECOMPENSA (
+    p_OPERATION IN VARCHAR2,
+    p_ID_TP_RECOMPENSA IN TB_TIPO_RECOMPENSA.ID_TP_RECOMPENSA%TYPE,
+    p_TIPO_RECOMPENSA IN TB_TIPO_RECOMPENSA.TIPO_RECOMPENSA%TYPE DEFAULT NULL
+) IS
 BEGIN
-    -- Verificar se o usuário existe antes de inserir o relatório de poluição
-    SELECT COUNT(*)
-    INTO   v_count
-    FROM   tb_usuario
-    WHERE  id_usuario = p_id_usuario;
+    IF p_OPERATION = 'INSERT' THEN
 
-    IF v_count = 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Usuário não encontrado para associar ao relatório de poluição.');
+        IF p_TIPO_RECOMPENSA IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo TIPO_RECOMPENSA é obrigatório.');
+        END IF;
+
+
+        INSERT INTO TB_TIPO_RECOMPENSA (
+            ID_TP_RECOMPENSA, TIPO_RECOMPENSA
+        ) VALUES (
+            p_ID_TP_RECOMPENSA, p_TIPO_RECOMPENSA
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_TIPO_RECOMPENSA
+        SET TIPO_RECOMPENSA = p_TIPO_RECOMPENSA
+        WHERE ID_TP_RECOMPENSA = p_ID_TP_RECOMPENSA;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_TP_RECOMPENSA não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_TIPO_RECOMPENSA
+        WHERE ID_TP_RECOMPENSA = p_ID_TP_RECOMPENSA;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_TP_RECOMPENSA não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
     END IF;
 
-    INSERT INTO tb_relatorios_poluicao (id_relatorio, id_usuario, data_relatorio, localizacao_relatorio, tipo_poluente, descricao_incidente)
-    VALUES (p_id_relatorio, p_id_usuario, p_data_relatorio, p_localizacao_relatorio, p_tipo_poluente, p_descricao_incidente);
-
-    COMMIT;
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Chave primária duplicada ao inserir relatório de poluição.');
+        RAISE_APPLICATION_ERROR(-20002, 'ID_TP_RECOMPENSA já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20003, 'Erro ao inserir relatório de poluição: ' || SQLERRM);
-END inserir_relatorio_poluicao;
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
 
-CREATE OR REPLACE PROCEDURE inserir_missao(
-    p_id_missao        IN tb_missoes.id_missao%TYPE,
-    p_descricao_missao IN tb_missoes.descricao_missao%TYPE,
-    p_tipo_missao      IN tb_missoes.tipo_missao%TYPE,
-    p_objetivo_missao  IN tb_missoes.objetivo_missao%TYPE,
-    p_progresso_missao IN tb_missoes.progresso_missao%TYPE
-)
-IS
+
+CREATE OR REPLACE PROCEDURE MANAGE_TB_PERFIL (
+    p_OPERATION IN VARCHAR2,
+    p_ID_PERFIL IN TB_PERFIL.ID_PERFIL%TYPE,
+    p_DESCRICAO_PERFIL IN TB_PERFIL.DESCRICAO_PERFIL%TYPE DEFAULT NULL
+) IS
 BEGIN
-    INSERT INTO tb_missoes (id_missao, descricao_missao, tipo_missao, objetivo_missao, progresso_missao)
-    VALUES (p_id_missao, p_descricao_missao, p_tipo_missao, p_objetivo_missao, p_progresso_missao);
+    IF p_OPERATION = 'INSERT' THEN
 
-    COMMIT;
+        IF p_DESCRICAO_PERFIL IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo DESCRICAO_PERFIL é obrigatório.');
+        END IF;
+
+
+        INSERT INTO TB_PERFIL (
+            ID_PERFIL, DESCRICAO_PERFIL
+        ) VALUES (
+            p_ID_PERFIL, p_DESCRICAO_PERFIL
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_PERFIL
+        SET DESCRICAO_PERFIL = p_DESCRICAO_PERFIL
+        WHERE ID_PERFIL = p_ID_PERFIL;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_PERFIL não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_PERFIL
+        WHERE ID_PERFIL = p_ID_PERFIL;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_PERFIL não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
+    END IF;
+
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Chave primária duplicada ao inserir missão.');
+        RAISE_APPLICATION_ERROR(-20002, 'ID_PERFIL já existe.');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Erro ao inserir missão: ' || SQLERRM);
-END inserir_missao;
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
+
+
+CREATE OR REPLACE PROCEDURE MANAGE_TB_EVENTO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_EVENTO IN TB_EVENTO.ID_EVENTO%TYPE,
+    p_NOME_EVENTO IN TB_EVENTO.NOME_EVENTO%TYPE DEFAULT NULL,
+    p_DATA_EVENTO IN TB_EVENTO.DATA_EVENTO%TYPE DEFAULT NULL,
+    p_LOCAL_EVENTO IN TB_EVENTO.LOCAL_EVENTO%TYPE DEFAULT NULL
+) IS
+BEGIN
+    IF p_OPERATION = 'INSERT' THEN
+
+        IF p_NOME_EVENTO IS NULL OR p_DATA_EVENTO IS NULL OR p_LOCAL_EVENTO IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Os campos NOME_EVENTO, DATA_EVENTO e LOCAL_EVENTO são obrigatórios.');
+        END IF;
+
+
+        INSERT INTO TB_EVENTO (
+            ID_EVENTO, NOME_EVENTO, DATA_EVENTO, LOCAL_EVENTO
+        ) VALUES (
+            p_ID_EVENTO, p_NOME_EVENTO, p_DATA_EVENTO, p_LOCAL_EVENTO
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_EVENTO
+        SET NOME_EVENTO = p_NOME_EVENTO,
+            DATA_EVENTO = p_DATA_EVENTO,
+            LOCAL_EVENTO = p_LOCAL_EVENTO
+        WHERE ID_EVENTO = p_ID_EVENTO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_EVENTO não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_EVENTO
+        WHERE ID_EVENTO = p_ID_EVENTO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_EVENTO não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
+    END IF;
+
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        RAISE_APPLICATION_ERROR(-20002, 'ID_EVENTO já existe.');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
+
+
+CREATE OR REPLACE PROCEDURE MANAGE_TB_REGIAO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_REGIAO IN TB_REGIAO.ID_REGIAO%TYPE,
+    p_REGIAO IN TB_REGIAO.REGIAO%TYPE DEFAULT NULL
+) IS
+BEGIN
+    IF p_OPERATION = 'INSERT' THEN
+
+        IF p_REGIAO IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo REGIAO é obrigatório.');
+        END IF;
+
+
+        INSERT INTO TB_REGIAO (
+            ID_REGIAO, REGIAO
+        ) VALUES (
+            p_ID_REGIAO, p_REGIAO
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_REGIAO
+        SET REGIAO = p_REGIAO
+        WHERE ID_REGIAO = p_ID_REGIAO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_REGIAO não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_REGIAO
+        WHERE ID_REGIAO = p_ID_REGIAO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_REGIAO não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
+    END IF;
+
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        RAISE_APPLICATION_ERROR(-20002, 'ID_REGIAO já existe.');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
+
+CREATE OR REPLACE PROCEDURE MANAGE_TB_ESTADO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_ESTADO IN TB_ESTADO.ID_ESTADO%TYPE,
+    p_ESTADO IN TB_ESTADO.ESTADO%TYPE DEFAULT NULL
+) IS
+BEGIN
+    IF p_OPERATION = 'INSERT' THEN
+
+        IF p_ESTADO IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'O campo ESTADO é obrigatório.');
+        END IF;
+
+
+        INSERT INTO TB_ESTADO (
+            ID_ESTADO, ESTADO
+        ) VALUES (
+            p_ID_ESTADO, p_ESTADO
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_ESTADO
+        SET ESTADO = p_ESTADO
+        WHERE ID_ESTADO = p_ID_ESTADO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_ESTADO não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_ESTADO
+        WHERE ID_ESTADO = p_ID_ESTADO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_ESTADO não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
+    END IF;
+
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        RAISE_APPLICATION_ERROR(-20002, 'ID_ESTADO já existe.');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
+
+CREATE OR REPLACE PROCEDURE MANAGE_TB_TIPO_EVENTO (
+    p_OPERATION IN VARCHAR2,
+    p_ID_TIPO_EVENTO IN TB_TIPO_EVENTO.ID_TIPO_EVENTO%TYPE,
+    p_ID_REGIAO IN TB_TIPO_EVENTO.ID_REGIAO%TYPE DEFAULT NULL,
+    p_TIPO_EVENTO IN TB_TIPO_EVENTO.TIPO_EVENTO%TYPE DEFAULT NULL
+) IS
+BEGIN
+    IF p_OPERATION = 'INSERT' THEN
+
+        IF p_ID_REGIAO IS NULL OR p_TIPO_EVENTO IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Os campos ID_REGIAO e TIPO_EVENTO são obrigatórios.');
+        END IF;
+
+
+        INSERT INTO TB_TIPO_EVENTO (
+            ID_TIPO_EVENTO, ID_REGIAO, TIPO_EVENTO
+        ) VALUES (
+            p_ID_TIPO_EVENTO, p_ID_REGIAO, p_TIPO_EVENTO
+        );
+
+    ELSIF p_OPERATION = 'UPDATE' THEN
+
+        UPDATE TB_TIPO_EVENTO
+        SET ID_REGIAO = p_ID_REGIAO,
+            TIPO_EVENTO = p_TIPO_EVENTO
+        WHERE ID_TIPO_EVENTO = p_ID_TIPO_EVENTO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_TIPO_EVENTO não encontrado.');
+        END IF;
+
+    ELSIF p_OPERATION = 'DELETE' THEN
+
+        DELETE FROM TB_TIPO_EVENTO
+        WHERE ID_TIPO_EVENTO = p_ID_TIPO_EVENTO;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, 'ID_TIPO_EVENTO não encontrado.');
+        END IF;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20004, 'Operação inválida. Use INSERT, UPDATE ou DELETE.');
+    END IF;
+
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        RAISE_APPLICATION_ERROR(-20002, 'ID_TIPO_EVENTO já existe.');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20005, SQLERRM);
+END;
