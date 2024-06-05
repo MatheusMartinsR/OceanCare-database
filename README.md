@@ -1,7 +1,11 @@
 # OCEANCARE
 
+## MODELO LÓGICO: 
 ![logo](https://cdn.discordapp.com/attachments/1207762158025179139/1247607024443723796/image.png?ex=66614cd6&is=665ffb56&hm=e0d25190ec45bcfd1084bb4ccdaf7c0f35aaa1ab5919c83bf3abfc763fe5ca5a&)
 
+
+## MODELO FÍSICO: 
+![logo](https://cdn.discordapp.com/attachments/1207762158025179139/1247609362696900608/image.png?ex=66614f03&is=665ffd83&hm=d1cdfbf58de0ea529911210a7a0554be8a2721e2d2787434d91c6dc113dd64c7&)
 
 # Escopo do Projeto:
 
