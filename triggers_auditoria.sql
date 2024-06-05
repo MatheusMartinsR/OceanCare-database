@@ -51,3 +51,36 @@ BEGIN
     INSERT INTO TB_AUDITORIA (ID_AUDITORIA, TABELA, OPERACAO, USUARIO, DATA_HORA, DADOS_ANTES, DADOS_DEPOIS)
     VALUES (SEQ_AUDITORIA.NEXTVAL, 'TB_USUARIO', v_operacao, USER, SYSTIMESTAMP, v_dados_antes, v_dados_depois);
 END;
+
+
+CREATE OR REPLACE TRIGGER AUDIT_TB_INTERACOES
+AFTER INSERT OR UPDATE OR DELETE ON TB_INTERACOES
+FOR EACH ROW
+DECLARE
+    v_operacao VARCHAR2(10);
+    v_dados_antes CLOB;
+    v_dados_depois CLOB;
+BEGIN
+    IF INSERTING THEN
+        v_operacao := 'INSERT';
+        v_dados_depois := 'ID_INTERACOES=' || :NEW.ID_INTERACOES || ', ID_USUARIO=' || :NEW.ID_USUARIO || 
+                          ', ID_EVENTO=' || :NEW.ID_EVENTO || ', ID_TP_INTERACAO=' || :NEW.ID_TP_INTERACAO || 
+                          ', ID_INCIDENTES=' || :NEW.ID_INCIDENTES || ', INTERACOES=' || :NEW.INTERACOES;
+    ELSIF UPDATING THEN
+        v_operacao := 'UPDATE';
+        v_dados_antes := 'ID_INTERACOES=' || :OLD.ID_INTERACOES || ', ID_USUARIO=' || :OLD.ID_USUARIO || 
+                         ', ID_EVENTO=' || :OLD.ID_EVENTO || ', ID_TP_INTERACAO=' || :OLD.ID_TP_INTERACAO || 
+                         ', ID_INCIDENTES=' || :OLD.ID_INCIDENTES || ', INTERACOES=' || :OLD.INTERACOES;
+        v_dados_depois := 'ID_INTERACOES=' || :NEW.ID_INTERACOES || ', ID_USUARIO=' || :NEW.ID_USUARIO || 
+                          ', ID_EVENTO=' || :NEW.ID_EVENTO || ', ID_TP_INTERACAO=' || :NEW.ID_TP_INTERACAO || 
+                          ', ID_INCIDENTES=' || :NEW.ID_INCIDENTES || ', INTERACOES=' || :NEW.INTERACOES;
+    ELSIF DELETING THEN
+        v_operacao := 'DELETE';
+        v_dados_antes := 'ID_INTERACOES=' || :OLD.ID_INTERACOES || ', ID_USUARIO=' || :OLD.ID_USUARIO || 
+                         ', ID_EVENTO=' || :OLD.ID_EVENTO || ', ID_TP_INTERACAO=' || :OLD.ID_TP_INTERACAO || 
+                         ', ID_INCIDENTES=' || :OLD.ID_INCIDENTES || ', INTERACOES=' || :OLD.INTERACOES;
+    END IF;
+ 
+    INSERT INTO TB_AUDITORIA (ID_AUDITORIA, TABELA, OPERACAO, USUARIO, DATA_HORA, DADOS_ANTES, DADOS_DEPOIS)
+    VALUES (SEQ_AUDITORIA.NEXTVAL, 'TB_INTERACOES', v_operacao, USER, SYSTIMESTAMP, v_dados_antes, v_dados_depois);
+END;
