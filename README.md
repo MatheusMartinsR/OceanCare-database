@@ -1,5 +1,7 @@
 # OCEANCARE
 
+![logo](https://cdn.discordapp.com/attachments/1207762158025179139/1247607024443723796/image.png?ex=66614cd6&is=665ffb56&hm=e0d25190ec45bcfd1084bb4ccdaf7c0f35aaa1ab5919c83bf3abfc763fe5ca5a&)
+
 
 # Escopo do Projeto:
 
