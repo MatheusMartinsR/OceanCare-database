@@ -11,8 +11,6 @@
 
 O aplicativo OceanCare visa promover a conscientização e ação direta sobre a conservação dos oceanos. Através de uma plataforma digital interativa, o aplicativo pretende educar os usuários sobre práticas de conservação marinha, envolver a comunidade em projetos de limpeza e conservação, e incentivar comportamentos ecologicamente responsáveis por meio de um sistema de recompensas e ranking.
 
-## Escopo do Projeto:
-O aplicativo OceanCare visa promover a conscientização e ação direta sobre a conservação dos oceanos. Através de uma plataforma digital interativa, o aplicativo pretende envolver a comunidade em projetos de limpeza e conservação, e incentivar comportamentos ecologicamente responsáveis por meio de um sistema de recompensas e ranking.
 
 ## Principais Funcionalidades:
 # Recompensas e Missões:
